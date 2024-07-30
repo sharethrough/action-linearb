@@ -24716,18 +24716,10 @@ async function run() {
     const apiKey = core.getInput('api_key', { required: true })
     const repoURL = core.getInput('repo_url', { required: true })
     const refName = core.getInput('ref_name', { required: true })
-    const services = core.getInput('services', { required: true })
 
-    let timeStamp = core.getInput('time_stamp')
-    let custom_stage = core.getInput('stage')
-
-    if (!timeStamp) {
-      timeStamp = new Date().toISOString()
-    }
-
-    if (!custom_stage) {
-      custom_stage = 'release'
-    }
+    const services = core.getInput('services') || ''
+    const timeStamp = core.getInput('time_stamp') || new Date().toISOString()
+    const custom_stage = core.getInput('stage') || 'release'
 
     const serviceArray = services.split(',').map(item => item.trim())
 
@@ -24735,19 +24727,24 @@ async function run() {
 
     const url = 'https://public-api.linearb.io/api/v1/deployments'
 
+    const body = {
+      repo_url: repoURL,
+      ref_name: refName,
+      timestamp: timeStamp,
+      stage: custom_stage
+    }
+
+    if (serviceArray.length > 0) {
+      body.services = serviceArray
+    }
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-API-Key': apiKey
       },
-      body: JSON.stringify({
-        repo_url: repoURL,
-        ref_name: refName,
-        services: serviceArray,
-        timestamp: timeStamp,
-        stage: custom_stage
-      })
+      body: JSON.stringify(body)
     })
 
     if (response.status !== 200) {
